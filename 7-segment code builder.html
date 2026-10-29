@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>7-segment code builder</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#ffffff;--surface:#f5f4ef;--text:#1f1e1d;--muted:#5f5e5a;--border:#d3d1c7;
+  --accent:#185FA5;--accent-bg:#E6F1FB;--accent-text:#0C447C;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1c1b1a;--surface:#2a2927;--text:#f1efe8;--muted:#b4b2a9;--border:#5f5e5a;
+    --accent:#378ADD;--accent-bg:#0C447C;--accent-text:#B5D4F4;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1c1b1a;--surface:#2a2927;--text:#f1efe8;--muted:#b4b2a9;--border:#5f5e5a;
+  --accent:#378ADD;--accent-bg:#0C447C;--accent-text:#B5D4F4;
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.6;font-size:16px}
+main{max-width:720px;margin:0 auto;padding:24px 16px 40px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 20px}
+.top{display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin:0 0 16px}
+.disp{width:170px;max-width:100%}
+.seg{fill:var(--surface);stroke:var(--border);stroke-width:0.6;cursor:pointer}
+.seg.on{fill:var(--accent);stroke:var(--accent)}
+.lbl{fill:var(--muted);font-size:11px;font-family:inherit}
+.panel{flex:1;min-width:260px}
+.cap{font-size:13px;color:var(--muted);margin:0 0 6px}
+.bits{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.cell{border:1px solid var(--border);border-radius:8px;padding:6px 0;text-align:center;cursor:pointer;background:var(--surface);color:var(--text);font:inherit}
+.cell.on{background:var(--accent-bg);border-color:var(--accent)}
+.cell .l{display:block;font-size:13px;color:var(--muted)}
+.cell .b{display:block;font-size:18px;font-weight:500}
+.cell.on .b{color:var(--accent-text)}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.stat{background:var(--surface);border-radius:8px;padding:12px}
+.stat .k{font-size:13px;color:var(--muted)}
+.stat .v{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px;font-size:14px;color:var(--muted)}
+.row strong{color:var(--text);font-size:16px;font-weight:500;font-variant-numeric:tabular-nums}
+select,button{font:inherit;font-size:14px;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer}
+select{padding:7px 10px}
+button:hover,select:hover{background:var(--surface)}
+button:active{transform:scale(0.98)}
+.note{margin-top:20px;padding:12px 14px;background:var(--surface);border-radius:8px;font-size:14px;color:var(--muted)}
+.note b{color:var(--text);font-weight:500}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+</style>
+</head>
+<body>
+<main>
+<h1>7-segment code builder</h1>
+<p class="sub">Click segments to build a digit code. Common cathode: 1 means the segment is lit.</p>
+
+<div class="top">
+<svg class="disp" viewBox="-10 -14 130 190" role="img" aria-label="Seven segment display. Click a segment to turn it on or off.">
+<rect id="s0" class="seg" x="24" y="8" width="52" height="10" rx="3" onclick="tg(0)"/>
+<rect id="s1" class="seg" x="80" y="22" width="10" height="48" rx="3" onclick="tg(1)"/>
+<rect id="s2" class="seg" x="80" y="90" width="10" height="48" rx="3" onclick="tg(2)"/>
+<rect id="s3" class="seg" x="24" y="142" width="52" height="10" rx="3" onclick="tg(3)"/>
+<rect id="s4" class="seg" x="10" y="90" width="10" height="48" rx="3" onclick="tg(4)"/>
+<rect id="s5" class="seg" x="10" y="22" width="10" height="48" rx="3" onclick="tg(5)"/>
+<rect id="s6" class="seg" x="24" y="75" width="52" height="10" rx="3" onclick="tg(6)"/>
+<circle id="s7" class="seg" cx="102" cy="147" r="5" onclick="tg(7)"/>
+<text class="lbl" x="50" y="-1" text-anchor="middle">a</text>
+<text class="lbl" x="102" y="50" text-anchor="middle">b</text>
+<text class="lbl" x="102" y="118" text-anchor="middle">c</text>
+<text class="lbl" x="50" y="166" text-anchor="middle">d</text>
+<text class="lbl" x="-1" y="118" text-anchor="middle">e</text>
+<text class="lbl" x="-1" y="50" text-anchor="middle">f</text>
+<text class="lbl" x="50" y="70" text-anchor="middle">g</text>
+<text class="lbl" x="112" y="166" text-anchor="middle">dp</text>
+</svg>
+
+<div class="panel">
+<p class="cap">Bits, highest to lowest</p>
+<div class="bits">
+<button class="cell" id="c7" onclick="tg(7)"><span class="l">dp</span><span class="b">0</span></button>
+<button class="cell" id="c6" onclick="tg(6)"><span class="l">g</span><span class="b">0</span></button>
+<button class="cell" id="c5" onclick="tg(5)"><span class="l">f</span><span class="b">0</span></button>
+<button class="cell" id="c4" onclick="tg(4)"><span class="l">e</span><span class="b">0</span></button>
+<button class="cell" id="c3" onclick="tg(3)"><span class="l">d</span><span class="b">0</span></button>
+<button class="cell" id="c2" onclick="tg(2)"><span class="l">c</span><span class="b">0</span></button>
+<button class="cell" id="c1" onclick="tg(1)"><span class="l">b</span><span class="b">0</span></button>
+<button class="cell" id="c0" onclick="tg(0)"><span class="l">a</span><span class="b">0</span></button>
+</div>
+<div class="stats">
+<div class="stat"><div class="k">Binary</div><div class="v" id="bin">0000 0000</div></div>
+<div class="stat"><div class="k">Hex code</div><div class="v" id="hex">0x00</div></div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<span>Segment a is on</span>
+<select id="sh" onchange="render()" aria-label="Pin where segment a is connected">
+<option value="8">P0.8 (shift 8)</option>
+<option value="0">P0.0 (shift 0)</option>
+<option value="16">P1.16 (shift 16)</option>
+</select>
+<span>Value to write:</span>
+<strong id="out">0x00000000</strong>
+</div>
+
+<div class="row">
+<span>Digits</span>
+<button onclick="ps(0)">0</button><button onclick="ps(1)">1</button><button onclick="ps(2)">2</button><button onclick="ps(3)">3</button><button onclick="ps(4)">4</button><button onclick="ps(5)">5</button><button onclick="ps(6)">6</button><button onclick="ps(7)">7</button><button onclick="ps(8)">8</button><button onclick="ps(9)">9</button>
+<button onclick="cl()">Clear</button>
+</div>
+
+<div class="note">
+<b>How to use it in code.</b> The shifted value goes into <code>IOSET</code> after <code>IOCLR</code> clears the segment pins. For P0.8 to P0.14, use <code>IO0DIR = 0x00007F00;</code> then <code>IO0CLR = 0x00007F00;</code> and <code>IO0SET = (code &lt;&lt; 8);</code>. Segment pins on Port 1 use the <code>IO1</code> registers.
+</div>
+</main>
+
+<script>
+var bits=[0,0,0,0,0,0,0,0];
+var D=[0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F];
+function tg(i){bits[i]=bits[i]?0:1;render();}
+function ps(n){var v=D[n];for(var i=0;i<8;i++){bits[i]=(v>>i)&1;}render();}
+function cl(){for(var i=0;i<8;i++){bits[i]=0;}render();}
+function pad(v,n){return ('00000000'+v.toString(16).toUpperCase()).slice(-n);}
+function render(){
+  var v=0;
+  for(var i=0;i<8;i++){
+    v|=bits[i]<<i;
+    document.getElementById('s'+i).setAttribute('class','seg'+(bits[i]?' on':''));
+    var c=document.getElementById('c'+i);
+    c.setAttribute('class','cell'+(bits[i]?' on':''));
+    c.querySelector('.b').textContent=bits[i];
+  }
+  var b='';
+  for(var j=7;j>=0;j--){b+=bits[j];if(j==4)b+=' ';}
+  document.getElementById('bin').textContent=b;
+  document.getElementById('hex').textContent='0x'+pad(v,2);
+  var s=parseInt(document.getElementById('sh').value,10);
+  document.getElementById('out').textContent='0x'+pad((v<<s)>>>0,8);
+}
+render();
+</script>
+</body>
+</html>
